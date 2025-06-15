@@ -32,6 +32,12 @@ buffer_vert[x + 1] = buffer_face[adress] + 2
 
 [Sergey5588](https://github.com/Sergey5588) - friend 
 
+---
+### Thanks
+
+[Anuken](https://github.com/Anuken) - for creating [mindustry](https://github.com/Anuken/Mindustry) and also all it's contributors!
+
+
 
 ---
 ### License
