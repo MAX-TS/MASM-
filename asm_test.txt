@@ -1,0 +1,68 @@
+set R_x 0
+set R_y 0
+set pos_x 0
+set pos_y 0
+op sub pos_z 0 5
+set screen_half_width 88
+set screen_half_height 88
+set focal_dist 1
+op cos XAxis_x R_x R_x
+set XAxis_y 0
+op sin XAxis_z R_x R_x
+op sin horizontal_len R_y R_y
+op sin temp1 R_x R_x
+op mul YAxis_x temp1 horizontal_len
+op cos YAxis_y R_y R_y
+op cos temp1 R_x R_x
+op mul YAxis_z temp1 horizontal_len
+op cos horizontal_len R_y R_y
+op sin temp1 R_x R_x
+op mul ZAxis_x temp1 horizontal_len
+op sin ZAxis_y R_y R_y
+op cos temp1 R_x R_x
+op mul ZAxis_z temp1 horizontal_len
+set point_adress 0
+set write_adress 0
+read point_x bank1 point_adress
+op add temp1 point_adress 1
+read point_y bank1 temp1
+op add temp1 point_adress 2
+read point_z bank1 temp1
+op sub point_x point_x pos_x
+op sub point_y point_y pos_y
+op sub point_z point_z pos_z
+op mul temp1 XAxis_x point_x
+op mul temp2 YAxis_x point_y
+op mul temp3 ZAxis_x point_z
+op add temp1 temp1 temp2
+op add point_local_x temp1 temp3
+op mul temp1 XAxis_y point_x
+op mul temp2 YAxis_y point_y
+op mul temp3 ZAxis_y point_z
+op add temp1 temp1 temp2
+op add point_local_y temp1 temp3
+op mul temp1 XAxis_z point_x
+op mul temp2 YAxis_z point_y
+op mul temp3 ZAxis_z point_z
+op add temp1 temp1 temp2
+op add point_local_z temp1 temp3
+op div temp1 point_local_x point_local_z
+op mul temp1 temp1 focal_dist
+op mul temp1 temp1 screen_half_width
+op add point_proj_x temp1 screen_half_width
+op div temp1 point_local_y point_local_z
+op mul temp1 temp1 focal_dist
+op mul temp1 temp1 screen_half_height
+op add point_proj_y temp1 screen_half_height
+write point_proj_x bank2 write_adress
+op add mem_adress512 write_adress 1
+write point_proj_y bank2 mem_adress512
+op add point_adress point_adress 3
+op add write_adress write_adress 3
+read point_x bank1 point_adress
+op add temp1 point_adress 1
+read point_y bank1 temp1
+op add temp1 point_adress 2
+read point_z bank1 temp1
+jump 30 notEqual point_x 123
+write 123 bank2 write_adress

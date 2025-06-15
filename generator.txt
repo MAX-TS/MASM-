@@ -1,0 +1,80 @@
+#this file will generate mesh and fill blocks in memory cell
+#okay so memory might in 1 vertex bank, 1 face bank but it will be grouped in 4x4 cubic chunks and a color palyte cell
+#vertices on edges will be duplicated.
+#cubic chunks will be located in the coordinate system:
+#    y
+#    |__x
+#   /
+#  z
+#chunk will be refered to with 3 numbers 2D example:
+# -1  1   0  1   1  1
+# -1  0   0  0   1  0
+# -1 -1   0 -1   1 -1
+#so we get that kind of system of processors
+#               -->                            ->                           ->                                ->
+# (1) generator --> (n) vertex banks(grouped)  -> (n) projection processors -> projection_banks               -> (n)graphic_processors
+#               -->                            ->                           -> (n)face_tables(grouped)        ->
+#               --> (n) face_banks ---------------------------------------------------------------------------->
+# and also game processor which connects to variable cell and to every processor to stop them
+# bacically we get n individual renderers working on data we distribute with generator and a crossfeed of data at projection_banks
+# since projection_banks take relatively low amount of memory we can have for every graphic processor memory group subdivided to projection processor groups.
+# this might be a bad idea in projection processors memory is not distributed evenly but it's easy to distribute
+#
+# the height map for terrain will be discribed by this formula:
+# h = floor(2.123*(cos(x/6.13) + cos(y)/6.57) + 0.5 * (sin(x) + sin(y*0.781)))
+# it's quite tough on operations (14) but hopefully will provide some interesting results
+
+# a simple code to generate chunk just for starting:
+
+define vertices bank1
+define faces bank2
+
+y = 0
+# for y in range(4)
+:y_loop
+    x = 0
+    :x_loop
+        elevation = floor(2.123*(cos(x*9.3515) + cos(y*55)/6.57) + 0.5 * (sin(x*57) + sin(y*44.77)))
+        
+        vertex_adress = 12 * (y * 4 + x)
+        
+        x_p_1 = x + 1
+        y_p_1 = y + 1
+        
+        vertices[vertex_adress] = x
+        vertices[vertex_adress + 1] = elevation
+        vertices[vertex_adress + 2] = y
+        
+        vertices[vertex_adress + 3] = x_p_1
+        vertices[vertex_adress + 4] = elevation
+        vertices[vertex_adress + 5] = y
+        
+        vertices[vertex_adress + 6] = x_p_1
+        vertices[vertex_adress + 7] = elevation
+        vertices[vertex_adress + 8] = y_p_1
+        
+        vertices[vertex_adress + 9] = x
+        vertices[vertex_adress + 10] = elevation
+        vertices[vertex_adress + 11] = y_p_1
+        
+        face_adress = (vertex_adress // 12) * 5
+        
+        face_loop_var = 0
+        :face_loop
+            faces[face_adress + face_loop_var] = vertex_adress + face_loop_var * 3
+            face_loop_var = face_loop_var + 1
+        jump face_loop face_loop_var < 4
+        faces[face_adress + 4] = 1
+        
+        x = x + 1
+    jump x_loop x < 4
+    
+    y = y + 1
+jump y_loop y < 4
+
+vertices[vertex_adress + 12] = 123
+faces[face_adress + 5] = 123
+
+
+wait 30
+        

@@ -1,0 +1,61 @@
+R_x = 0
+R_y = 0
+
+pos_x = 0
+pos_y = 0
+pos_z = -5
+
+screen_half_width = 88
+screen_half_height = 88
+
+focal_dist = 1
+
+
+#calculate local Axises
+XAxis_x = cos(R_x)
+XAxis_y = 0
+XAxis_z = sin(R_x)
+
+horizontal_len = sin(R_y)
+YAxis_x = sin(R_x) * horizontal_len
+YAxis_y = cos(R_y)
+YAxis_z = cos(R_x) * horizontal_len
+
+horizontal_len = cos(R_y)
+ZAxis_x = sin(R_x) * horizontal_len
+ZAxis_y = sin(R_y)
+ZAxis_z = cos(R_x) * horizontal_len
+
+
+point_adress = 0
+write_adress = 0
+
+point_x = bank1[point_adress]
+point_y = bank1[point_adress + 1]
+point_z = bank1[point_adress + 2]
+
+#for_all_points
+:point_loop
+    point_x = point_x - pos_x
+    point_y = point_y - pos_y
+    point_z = point_z - pos_z
+    
+    point_local_x = XAxis_x * point_x + YAxis_x * point_y + ZAxis_x * point_z
+    point_local_y = XAxis_y * point_x + YAxis_y * point_y + ZAxis_y * point_z
+    point_local_z = XAxis_z * point_x + YAxis_z * point_y + ZAxis_z * point_z
+    
+    point_proj_x = point_local_x / point_local_z * focal_dist * screen_half_width + screen_half_width
+    point_proj_y = point_local_y / point_local_z * focal_dist * screen_half_height + screen_half_height
+    
+    bank2[write_adress] = point_proj_x
+    bank2[write_adress + 1] = point_proj_y
+    
+    point_adress = point_adress + 3
+    write_adress = write_adress + 3
+    
+    point_x = bank1[point_adress]
+    point_y = bank1[point_adress + 1]
+    point_z = bank1[point_adress + 2]
+jump point_loop point_x != 123
+
+bank2[write_adress] = 123

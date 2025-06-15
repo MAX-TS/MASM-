@@ -1,0 +1,65 @@
+set y 0
+set x 0
+op mul temp1 x 9.3515
+op mul temp2 y 55
+op mul temp3 x 57
+op mul temp4 y 44.77
+op cos temp1 temp1 temp1
+op cos temp2 temp2 temp2
+op sin temp3 temp3 temp3
+op sin temp4 temp4 temp4
+op div temp2 temp2 6.57
+op add temp1 temp1 temp2
+op add temp3 temp3 temp4
+op mul temp1 2.123 temp1
+op mul temp3 0.5 temp3
+op add temp1 temp1 temp3
+op floor elevation temp1 temp1
+op mul temp1 y 4
+op add temp1 temp1 x
+op mul vertex_adress 12 temp1
+op add x_p_1 x 1
+op add y_p_1 y 1
+write x bank1 vertex_adress
+op add mem_adress512 vertex_adress 1
+write elevation bank1 mem_adress512
+op add mem_adress512 vertex_adress 2
+write y bank1 mem_adress512
+op add mem_adress512 vertex_adress 3
+write x_p_1 bank1 mem_adress512
+op add mem_adress512 vertex_adress 4
+write elevation bank1 mem_adress512
+op add mem_adress512 vertex_adress 5
+write y bank1 mem_adress512
+op add mem_adress512 vertex_adress 6
+write x_p_1 bank1 mem_adress512
+op add mem_adress512 vertex_adress 7
+write elevation bank1 mem_adress512
+op add mem_adress512 vertex_adress 8
+write y_p_1 bank1 mem_adress512
+op add mem_adress512 vertex_adress 9
+write x bank1 mem_adress512
+op add mem_adress512 vertex_adress 10
+write elevation bank1 mem_adress512
+op add mem_adress512 vertex_adress 11
+write y_p_1 bank1 mem_adress512
+op mul temp1 12 5
+op idiv face_adress vertex_adress temp1
+set face_loop_var 0
+op add mem_adress512 face_adress face_loop_var
+op mul temp1 face_loop_var 3
+op add write_var512 vertex_adress temp1
+write write_var512 bank2 mem_adress512
+op add face_loop_var face_loop_var 1
+jump 48 lessThan face_loop_var 4
+op add mem_adress512 face_adress 4
+write 1 bank2 mem_adress512
+op add x x 1
+jump 2 lessThan x 4
+op add y y 1
+jump 1 lessThan y 4
+op add mem_adress512 vertex_adress 12
+write 123 bank1 mem_adress512
+op add mem_adress512 face_adress 5
+write 123 bank2 mem_adress512
+wait 30

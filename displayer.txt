@@ -1,0 +1,43 @@
+#this file will display already projected points
+define points bank1
+define faces bank2
+
+draw clear 0 0 0 0 0 0
+
+face_adress = 0
+
+#for all faces
+:face_loop
+    point1_adress = faces[face_adress]
+    
+    point1_x = points[point1_adress]
+    point1_y = points[point1_adress + 1]
+    
+    point2_adress = faces[face_adress + 1]
+    
+    point2_x = points[point2_adress]
+    point2_y = points[point2_adress + 1]
+    
+    point3_adress = faces[face_adress + 2]
+    
+    point3_x = points[point3_adress]
+    point3_y = points[point3_adress + 1]
+    
+    point4_adress = faces[face_adress + 3]
+    
+    point4_x = points[point4_adress]
+    point4_y = points[point4_adress + 1]
+    
+    jump point_loop_exit point1_x == 123
+    
+    draw triangle point1_x point1_y point2_x point2_y point3_x point3_y
+    draw triangle point1_x point1_y point4_x point4_y point3_x point3_y
+    draw rect point1_x point1_y 10 10
+    
+    
+    face_adress = face_adress + 5
+    
+jump face_loop always
+:point_loop_exit
+
+drawflush display1

@@ -1,0 +1,28 @@
+draw clear 0 0 0 0 0 0
+set face_adress 0
+read point1_adress bank2 face_adress
+read point1_x bank1 point1_adress
+op add temp1 point1_adress 1
+read point1_y bank1 temp1
+op add temp1 face_adress 1
+read point2_adress bank2 temp1
+read point2_x bank1 point2_adress
+op add temp1 point2_adress 1
+read point2_y bank1 temp1
+op add temp1 face_adress 2
+read point3_adress bank2 temp1
+read point3_x bank1 point3_adress
+op add temp1 point3_adress 1
+read point3_y bank1 temp1
+op add temp1 face_adress 3
+read point4_adress bank2 temp1
+read point4_x bank1 point4_adress
+op add temp1 point4_adress 1
+read point4_y bank1 temp1
+jump  27    equal point1_x 123
+draw triangle point1_x point1_y point2_x point2_y point3_x point3_y
+draw triangle point1_x point1_y point4_x point4_y point3_x point3_y
+draw rect point1_x point1_y 10 10
+op add point_adress point_adress 5
+jump 2 always
+drawflush 
