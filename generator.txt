@@ -20,6 +20,14 @@
 # since projection_banks take relatively low amount of memory we can have for every graphic processor memory group subdivided to projection processor groups.
 # this might be a bad idea in projection processors memory is not distributed evenly but it's easy to distribute
 #
+# after thinking on that scheme for a while, I think simplification could be made.
+# face bank1 and vertex banks could be joined together since vertex optimisation seems to not be possible without hash tables
+# each of the projection processors will have acceess to all face banks and will read them in "stripes" meaning it will offset by a specific amount and read
+# every nth face based on amount of projectors.
+# if more than one display is in use face tables are still an option
+# also multiple numbers could be joined together since decoding them takes almost as many operations as looking them up individualy but will decrease amount of
+# memory banks by 5 times. In face banks coordinates are relative to the chunk
+#
 # the height map for terrain will be discribed by this formula:
 # h = floor(2.123*(cos(x/6.13) + cos(y)/6.57) + 0.5 * (sin(x) + sin(y*0.781)))
 # it's quite tough on operations (14) but hopefully will provide some interesting results
@@ -28,6 +36,11 @@
 
 define vertices bank1
 define faces bank2
+
+# id of bank that stores 3 4x4 chunks
+mesh_data_id = 0
+mesh_data = bank1
+mesh_data_adress = 0
 
 y = 0
 # for y in range(4)
@@ -66,6 +79,10 @@ y = 0
         jump face_loop face_loop_var < 4
         faces[face_adress + 4] = 1
         
+        # writing to a seperate memory bank for testing another data system
+        #mesh_data[mesh_data_adress] = x + elevation << 3 + y << 6 + x_p_1 << 9 + elevation << 12 + y << 15 + x_p_1 << 18 + elevation << 21 + y_p_1 << 24 + x << 27 + elevation << 30 + y_p1 << 33 + 1 << 36
+        #mesh_data_adress = mesh_data_adress + 1
+        
         x = x + 1
     jump x_loop x < 4
     
@@ -77,4 +94,34 @@ faces[face_adress + 5] = 123
 
 
 wait 30
-        
+
+end
+
+#012345678
+
+:update_mesh_data_pointer
+    jump is_5678 mesh_data_id > 4
+        jump is_34 mesh_data_id > 2
+            jump is_2 mesh_data_id > 1
+                jump is_1 mesh_data_id > 0
+                    mesh_data = bank1
+                :is_1
+                    mesh_data = bank2
+            :is_2
+                mesh_data = bank3
+        :is_34
+            jump is_4 mesh_data_id > 3
+                mesh_data = bank4
+            :is_4
+                mesh_data = bank5
+    :is_5678
+        jump is_78 mesh_data_id > 6
+            jump is_6 mesh_data_id > 5
+                mesh_data = bank6
+            :is_6
+                mesh_data = bank7
+        :is_78
+            jump is_8 mesh_data_id > 7
+                mesh_data = bank8
+            :is_8
+                mesh_data = bank9

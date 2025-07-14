@@ -1,9 +1,20 @@
-R_x = 0
-R_y = 0
+define data bank3
 
-pos_x = 0
-pos_y = 0
-pos_z = -5
+define player_pos_adress 0
+define axises_adress 5
+define player_cam_rot_adress 3
+
+define points_len_adress 14
+define faces_len_adress 15
+define points_proj_adress 16
+
+
+R_x = data[3]
+R_y = data[4]
+
+pos_x = data[0]
+pos_y = data[1]
+pos_z = data[2]
 
 screen_half_width = 88
 screen_half_height = 88
@@ -11,20 +22,18 @@ screen_half_height = 88
 focal_dist = 1
 
 
-#calculate local Axises
-XAxis_x = cos(R_x)
-XAxis_y = 0
-XAxis_z = sin(R_x)
+#read local Axises
+XAxis_x = data[5]
+XAxis_y = data[6]
+XAxis_z = data[7]
 
-horizontal_len = sin(R_y)
-YAxis_x = sin(R_x) * horizontal_len
-YAxis_y = cos(R_y)
-YAxis_z = cos(R_x) * horizontal_len
+YAxis_x = data[8]
+YAxis_y = data[9]
+YAxis_z = data[10]
 
-horizontal_len = cos(R_y)
-ZAxis_x = sin(R_x) * horizontal_len
-ZAxis_y = sin(R_y)
-ZAxis_z = cos(R_x) * horizontal_len
+ZAxis_x = data[11]
+ZAxis_y = data[12]
+ZAxis_z = data[13]
 
 
 point_adress = 0
@@ -44,8 +53,16 @@ point_z = bank1[point_adress + 2]
     point_local_y = XAxis_y * point_x + YAxis_y * point_y + ZAxis_y * point_z
     point_local_z = XAxis_z * point_x + YAxis_z * point_y + ZAxis_z * point_z
     
-    point_proj_x = point_local_x / point_local_z * focal_dist * screen_half_width + screen_half_width
-    point_proj_y = point_local_y / point_local_z * focal_dist * screen_half_height + screen_half_height
+    point_proj_x = point_local_x / point_local_z * focal_dist * screen_half_width
+    point_proj_y = point_local_y / point_local_z * focal_dist * screen_half_height
+    
+    jump not_negative_z point_local_z > 0
+        point_proj_x = -point_proj_x * 1000
+        point_proj_y = -point_proj_y * 1000
+    :not_negative_z
+    
+    point_proj_x = point_proj_x + screen_half_width
+    point_proj_y = point_proj_y + screen_half_height
     
     bank2[write_adress] = point_proj_x
     bank2[write_adress + 1] = point_proj_y

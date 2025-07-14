@@ -1,6 +1,6 @@
 bytes_n = 0
 last_line_len=0
-char_set = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_:#.")
+char_set = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_:#")
 def skip_spaces(start, line):
     pos = start
     while pos < len(line) and line[pos] == " ":
@@ -93,7 +93,7 @@ def convert_expression(exp, var_name, file, is_jump, jump_loc):
     result = ""
     operations = []
     #pemdas
-    coeffs = {"=": -1000, "!": -1000, "not": -1, "and": -2, "or": -3, "<":0,">":0,"<=":0,">=":0,"==": 0,"===": 0,"!=": 0, "+": 1, "-": 1, "//": 2, "*": 3, "/": 3, "<<":4,">>":4,"|": 4, "&": 5, "^": 5, "**": 6, "func": 8}
+    coeffs = {"=": -1000, "!": -1000, "not": -1, "and": -2, "or": -3, "<":0,">":0,"<=":0,">=":0,"==": 0,"===": 0,"!=": 0, "+": 1, "-": 1, "//": 2, "*": 3, "/": 3, "<<":4,">>":4,"|": 4, "&": 5, "^": 5, "**": 6, "func": 8, ".": 9}
     functions = {"min", "max", "sin", "asin", "cos", "acos", "tan", "atan", "rand", "sqrt", "floor", "ceil", "log10", "log", "abs", "noise", "len", "angle", "anglediff", "flip"}
     functions_2_params = {"min", "max", "noise"}
     functions_2_params_stack = []
@@ -143,11 +143,18 @@ def convert_expression(exp, var_name, file, is_jump, jump_loc):
             elif s == ",":
                 funct = functions_2_params_stack.pop(-1)
                 operations.append((funct, len(numbers)-1, coeffs["func"]+additional_priority - 100))
+            elif s == ".":
+                if numbers[-1][0].isdecimal():
+                    number = numbers.pop(-1)
+                    number += s
+                    reading_number = True
+                else:
+                    operations.append((s, len(numbers)-1, coeffs[s]+additional_priority))
             elif len(operations) != 0 and (operations[-1][0]+s) in coeffs.keys() and not prev_number:
                 operations[-1] = (operations[-1][0]+s, len(numbers)-1, coeffs[operations[-1][0]+s]+additional_priority)
             else:
                 operations.append((s, len(numbers)-1, coeffs[s]+additional_priority))
-            if s not in ") ":
+            if s not in ")] ":
                 prev_number = False
                 
     operations_to_names = {"+": "add", "-": "sub", "*": "mul", "/": "div", "//": "idiv", "abs": "mod", "**": "pow", "==": "equal", "!=": "notEqual", "and": "land", "<":"lessThan", "<=": "lessThanEq","===": "strictEqual", ">": "greaterThan", ">=": "greaterThanEq", "<<": "shl", ">>": "shr", "|": "or", "or": "or", "&": "and", "^": "xor", "not": "not", }
@@ -185,6 +192,11 @@ def convert_expression(exp, var_name, file, is_jump, jump_loc):
             temp_var_name = var_name
         if is_jump and operation[0] in jump_operations and operation == operations[-1]:
             upcode = "jump " + str(jump_loc) + " " +  operations_to_names[operation[0]] + " " + var1 + " " + var2 + "\n"
+            file.write(upcode)
+            last_line_len = len(upcode)
+            bytes_n += last_line_len
+        elif operation[0] == ".":
+            upcode = "sensor " + temp_var_name + " " + var1 + " @" + var2 + "\n"
             file.write(upcode)
             last_line_len = len(upcode)
             bytes_n += last_line_len
@@ -231,6 +243,9 @@ elif source_name == "dis":
 elif source_name == "proj":
     source_name = "mindustry_asm.txt"
     output_name = "asm_test.txt"
+elif source_name == "game":
+    source_name = "game-logic.txt"
+    output_name = "game-logic_masm.txt"
 else:
     output_name = input("file output: ")
 source = open(source_name, "r")
