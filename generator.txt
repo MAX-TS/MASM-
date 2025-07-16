@@ -32,96 +32,85 @@
 # h = floor(2.123*(cos(x/6.13) + cos(y)/6.57) + 0.5 * (sin(x) + sin(y*0.781)))
 # it's quite tough on operations (14) but hopefully will provide some interesting results
 
-# a simple code to generate chunk just for starting:
+define data bank10
 
-define vertices bank1
-define faces bank2
+define chunk_offset_adresses 17
+define chunk_health_flags 98
+define graphic_processors_n 8
 
-# id of bank that stores 3 4x4 chunks
+jump setupped setup == 1
+    data[chunk_health_flags] = 0
+    setup = 1
+:setupped
+# a simple code to generate chunks just for starting:
+chunk_health = data[chunk_health_flags]
+
+chunk_id = 0
+
 mesh_data_id = 0
-mesh_data = bank1
-mesh_data_adress = 0
+getlink mesh_data mesh_data_id
+:data_loop
 
-y = 0
-# for y in range(4)
-:y_loop
-    x = 0
-    :x_loop
-        elevation = floor(2.123*(cos(x*9.3515) + cos(y*55)/6.57) + 0.5 * (sin(x*57) + sin(y*44.77)))
+    vert_id = 0
+    :vertical_loop
+        jump chunk_healthy (chunk_health >> chunk_id) % 2 == 1 
+            
+            chunk_offset_adress = chunk_offset_adresses + chunk_id * 3
+            
+            chunk_offset_x = data[chunk_offset_adress]
+            chunk_offset_y = data[chunk_offset_adress + 1]
+            chunk_offset_z = data[chunk_offset_adress + 2]
+            
+            mesh_data_adress = 170 * vert_id
         
-        vertex_adress = 12 * (y * 4 + x)
+            y = 0
+            :y_loop
+            
+                x = 0
+                :x_loop
+                    x_abs = x + chunk_offset_x
+                    y_abs = y + chunk_offset_z
+                    elevation = floor(2.123*(cos(x_abs*9.3515) + cos(y_abs*55)/6.57) + 0.5 * (sin(x_abs*57) + sin(y_abs*44.77)))
+                    elevation = elevation - chunk_offset_y
+                    
+                    x_p_1 = x + 1
+                    y_p_1 = y + 1
+                    
+                    mesh_data[mesh_data_adress] = x + elevation << 3 + y << 6 + x_p_1 << 9 + elevation << 12 + y << 15 + x_p_1 << 18 + elevation << 21 + y_p_1 << 24 + x << 27 + elevation << 30 + y_p_1 << 33 + 1 << 36
+                    
+                    jump in_bounds (elevation >> 2) == 0
+                        mesh_data[mesh_data_adress] = 0
+                    :in_bounds
+                    
+                    mesh_data_adress = mesh_data_adress + 1
+                    
+                    x = x + 1
+                jump x_loop x < 4
+                
+                y = y + 1
+            jump y_loop y < 4
+            
+            cleaning_var = 0
+            :cleaning_loop
+                mesh_data[mesh_data_adress + cleaning_var] = 0
+                cleaning_var = cleaning_var + 1
+            jump cleaning_loop cleaning_var < graphic_processors_n
+            
+            chunk_health = chunk_health + 1 << chunk_id
         
-        x_p_1 = x + 1
-        y_p_1 = y + 1
+        :chunk_healthy
+        chunk_id = chunk_id + 1
         
-        vertices[vertex_adress] = x
-        vertices[vertex_adress + 1] = elevation
-        vertices[vertex_adress + 2] = y
-        
-        vertices[vertex_adress + 3] = x_p_1
-        vertices[vertex_adress + 4] = elevation
-        vertices[vertex_adress + 5] = y
-        
-        vertices[vertex_adress + 6] = x_p_1
-        vertices[vertex_adress + 7] = elevation
-        vertices[vertex_adress + 8] = y_p_1
-        
-        vertices[vertex_adress + 9] = x
-        vertices[vertex_adress + 10] = elevation
-        vertices[vertex_adress + 11] = y_p_1
-        
-        face_adress = (vertex_adress // 12) * 5
-        
-        face_loop_var = 0
-        :face_loop
-            faces[face_adress + face_loop_var] = vertex_adress + face_loop_var * 3
-            face_loop_var = face_loop_var + 1
-        jump face_loop face_loop_var < 4
-        faces[face_adress + 4] = 1
-        
-        # writing to a seperate memory bank for testing another data system
-        #mesh_data[mesh_data_adress] = x + elevation << 3 + y << 6 + x_p_1 << 9 + elevation << 12 + y << 15 + x_p_1 << 18 + elevation << 21 + y_p_1 << 24 + x << 27 + elevation << 30 + y_p1 << 33 + 1 << 36
-        #mesh_data_adress = mesh_data_adress + 1
-        
-        x = x + 1
-    jump x_loop x < 4
+        vert_id = vert_id + 1
+    jump vertical_loop vert_id < 3
     
-    y = y + 1
-jump y_loop y < 4
+    mesh_data_id = mesh_data_id + 1
+    getlink mesh_data mesh_data_id
+jump data_loop mesh_data_id < 9
 
-vertices[vertex_adress + 12] = 123
-faces[face_adress + 5] = 123
-
+data[chunk_health_flags] = chunk_health
 
 wait 30
 
 end
 
-#012345678
-
-:update_mesh_data_pointer
-    jump is_5678 mesh_data_id > 4
-        jump is_34 mesh_data_id > 2
-            jump is_2 mesh_data_id > 1
-                jump is_1 mesh_data_id > 0
-                    mesh_data = bank1
-                :is_1
-                    mesh_data = bank2
-            :is_2
-                mesh_data = bank3
-        :is_34
-            jump is_4 mesh_data_id > 3
-                mesh_data = bank4
-            :is_4
-                mesh_data = bank5
-    :is_5678
-        jump is_78 mesh_data_id > 6
-            jump is_6 mesh_data_id > 5
-                mesh_data = bank6
-            :is_6
-                mesh_data = bank7
-        :is_78
-            jump is_8 mesh_data_id > 7
-                mesh_data = bank8
-            :is_8
-                mesh_data = bank9

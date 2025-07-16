@@ -1,30 +1,51 @@
-read R_x bank3 3
-read R_y bank3 4
-read pos_x bank3 0
-read pos_y bank3 1
-read pos_z bank3 2
+set projector_id 0
+op add ready_flag_adress 100 projector_id
+read R_x bank10 3
+read R_y bank10 4
+read pos_x bank10 0
+read pos_y bank10 1
+read pos_z bank10 2
 set screen_half_width 88
 set screen_half_height 88
 set focal_dist 1
-read XAxis_x bank3 5
-read XAxis_y bank3 6
-read XAxis_z bank3 7
-read YAxis_x bank3 8
-read YAxis_y bank3 9
-read YAxis_z bank3 10
-read ZAxis_x bank3 11
-read ZAxis_y bank3 12
-read ZAxis_z bank3 13
+read XAxis_x bank10 5
+read XAxis_y bank10 6
+read XAxis_z bank10 7
+read YAxis_x bank10 8
+read YAxis_y bank10 9
+read YAxis_z bank10 10
+read ZAxis_x bank10 11
+read ZAxis_y bank10 12
+read ZAxis_z bank10 13
+set chunk_id 0
+set mesh_data_id 0
+getlink mesh_data mesh_data_id
+set vert_id 0
+op mul temp1 170 vert_id
+op add face_adress temp1 projector_id
+op mul temp1 chunk_id 3
+op add chunk_offset_adress 17 temp1
+read chunk_offset_x bank10 chunk_offset_adress
+op add temp1 chunk_offset_adress 1
+read chunk_offset_y bank10 temp1
+op add temp1 chunk_offset_adress 2
+read chunk_offset_z bank10 temp1
+read face_data mesh_data face_adress
+op shr type face_data 36
+jump  96    equal type 0
 set point_adress 0
-set write_adress 0
-read point_x bank1 point_adress
-op add temp1 point_adress 1
-read point_y bank1 temp1
-op add temp1 point_adress 2
-read point_z bank1 temp1
-op sub point_x point_x pos_x
-op sub point_y point_y pos_y
-op sub point_z point_z pos_z
+op mod point_x face_data 8
+op shr face_data face_data 3
+op mod point_y face_data 8
+op shr face_data face_data 3
+op mod point_z face_data 8
+op shr face_data face_data 3
+op sub temp1 point_x pos_x
+op add point_x temp1 chunk_offset_x
+op sub temp1 point_y pos_y
+op add point_y temp1 chunk_offset_y
+op sub temp1 point_z pos_z
+op add point_z temp1 chunk_offset_z
 op mul temp1 XAxis_x point_x
 op mul temp2 YAxis_x point_y
 op mul temp3 ZAxis_x point_z
@@ -46,22 +67,41 @@ op mul point_proj_x temp1 screen_half_width
 op div temp1 point_local_y point_local_z
 op mul temp1 temp1 focal_dist
 op mul point_proj_y temp1 screen_half_height
-jump  53    greaterThan point_local_y 0
+jump  74    greaterThan point_local_z 0
 op sub temp1 0 point_proj_x
 op mul point_proj_x temp1 1000
 op sub temp1 0 point_proj_y
 op mul point_proj_y temp1 1000
 op add point_proj_x point_proj_x screen_half_width
 op add point_proj_y point_proj_y screen_half_height
-write point_proj_x bank2 write_adress
-op add mem_adress512 write_adress 1
-write point_proj_y bank2 mem_adress512
-op add point_adress point_adress 3
-op add write_adress write_adress 3
-read point_x bank1 point_adress
-op add temp1 point_adress 1
-read point_y bank1 temp1
-op add temp1 point_adress 2
-read point_z bank1 temp1
-jump 24 notEqual point_x 123
-write 123 bank2 write_adress
+jump  84    greaterThanEq point_adress 2
+jump  81    greaterThanEq point_adress 1
+set point0_x point_proj_x
+set point0_y point_proj_y
+jump  90    always
+set point1_x point_proj_x
+set point1_y point_proj_y
+jump  90    always
+jump  88    greaterThanEq point_adress 3
+set point2_x point_proj_x
+set point2_y point_proj_y
+jump  90    always
+set point3_x point_proj_x
+set point3_y point_proj_y
+op add point_adress point_adress 1
+jump 36 lessThan point_adress 4
+draw triangle point0_x point0_y point1_x point1_y point2_x point2_y
+draw triangle point0_x point0_y point3_x point3_y point2_x point2_y
+op add face_adress face_adress 8
+jump 32 always
+op add chunk_id chunk_id 1
+op add vert_id vert_id 1
+jump 23 lessThan vert_id 3
+op add mesh_data_id mesh_data_id 1
+getlink mesh_data mesh_data_id
+jump 22 lessThan mesh_data_id 9
+write 1 bank10 ready_flag_adress
+read is_done bank10 99
+jump 103 notEqual is_done 1
+drawflush display1
+write 0 bank10 ready_flag_adress

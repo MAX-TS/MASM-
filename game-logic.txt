@@ -11,6 +11,13 @@ define points_len_adress 14
 define faces_len_adress 15
 define points_proj_adress 16
 
+define chunk_offset_adresses 17
+
+define graphic_processors_ready_flags 100
+define frame_ready_flag 99
+
+define chunk_health_flags 98
+
 define key_W switch1
 define key_A switch2
 define key_S switch3
@@ -27,7 +34,7 @@ define mouse_down switch10
 define space switch11
 define shift switch12
 
-
+define projectors_n 8
 
 player_x_pos_adr = player_pos_adress
 player_y_pos_adr = player_pos_adress + 1
@@ -46,6 +53,24 @@ jump defined is_defined == 1
     data[player_y_pos_adr] = pos_y
     data[player_z_pos_adr] = pos_z
     
+    offset_write_adress = chunk_offset_adresses
+    x = -4
+    :x_loop
+        y = -4
+        :y_loop
+            z = -4
+            :z_loop
+                data[offset_write_adress] = x
+                data[offset_write_adress + 1] = y
+                data[offset_write_adress + 2] = z
+                offset_write_adress = offset_write_adress + 3
+                z = z + 4
+            jump z_loop z <= 4
+            y = y + 4
+        jump y_loop y <= 4
+        x = x + 4
+    jump x_loop x <= 4
+    
     is_defined = 1
     
     jump calculate_rotation_axises always
@@ -59,8 +84,8 @@ jump W_false key_W.enabled == 0
 :W_false
 
 jump A_false key_A.enabled == 0
-    data[player_z_pos_adr] = data[player_z_pos_adr] - XAxis_z
-    data[player_x_pos_adr] = data[player_x_pos_adr] - XAxis_x
+    data[player_z_pos_adr] = data[player_z_pos_adr] - side_axis_z
+    data[player_x_pos_adr] = data[player_x_pos_adr] - side_axis_x
 :A_false
 
 jump S_false key_S.enabled == 0
@@ -69,70 +94,100 @@ jump S_false key_S.enabled == 0
 :S_false
 
 jump D_false key_D.enabled == 0
-    data[player_z_pos_adr] = data[player_z_pos_adr] + XAxis_z
-    data[player_x_pos_adr] = data[player_x_pos_adr] + XAxis_x
+    data[player_z_pos_adr] = data[player_z_pos_adr] + side_axis_z
+    data[player_x_pos_adr] = data[player_x_pos_adr] + side_axis_x
 :D_false
 
 jump space_false space.enabled == 0
     data[player_y_pos_adr] = data[player_y_pos_adr] + 0.05
 :space_false
 
-jump shift_false space.enabled == 0
+jump shift_false shift.enabled == 0
     data[player_y_pos_adr] = data[player_y_pos_adr] - 0.05
 :shift_false
 
 jump up_false mouse_up.enabled == 0
-    R_y = R_y + 1
+    R_y = R_y - 1
     jump calculate_rotation_axises always
 :up_false
 
 jump down_false mouse_down.enabled == 0
-    R_y = R_y - 1
+    R_y = R_y + 1
     jump calculate_rotation_axises always
 :down_false
 
 jump right_false mouse_right.enabled == 0
-    R_x = R_x + 1
+    R_x = R_x - 1
     jump calculate_rotation_axises always
 :right_false
 
 jump left_false mouse_left.enabled == 0
-    R_x = R_x - 1
+    R_x = R_x + 1
     jump calculate_rotation_axises always
 :left_false
+
+:mouse_check_end
+
+i = 0
+sum = 0
+:flag_counting_loop
+    sum = sum + data[graphic_processors_ready_flags + i]
+    i = i + 1
+jump flag_counting_loop i < projectors_n
+
+jump frame_not_done sum < projectors_n
+    draw clear 0 0 0 0 0 0
+    drawflush display1
+    data[frame_ready_flag] = 1
+    wait 0.05
+    jump end_flag_counting always
+:frame_not_done
+    data[frame_ready_flag] = 0
+:end_flag_counting
 
 end
 
 :calculate_rotation_axises
     data[player_cam_rot_adress] = R_x
     data[player_cam_rot_adress + 1] = R_y
-
+    
+    sin_r_x = sin(R_x)
+    cos_r_x = cos(R_x)
+    
+    sin_r_y = sin(R_y)
+    cos_r_y = cos(R_y)
+    
     #calculate local Axises
-    XAxis_x = cos(R_x)
-    XAxis_y = 0
-    XAxis_z = -sin(R_x)
+    XAxis_x = cos_r_x
+    XAxis_y = -sin_r_y * sin_r_x
+    XAxis_z = -cos_r_y * sin_r_x
     
     data[axises_adress] = XAxis_x
     data[axises_adress + 1] = XAxis_y
     data[axises_adress + 2] = XAxis_z
     
-    horizontal_len = sin(R_y)
-    YAxis_x = -sin(R_x) * horizontal_len
-    YAxis_y = cos(R_y)
-    YAxis_z = -cos(R_x) * horizontal_len
+    
+    YAxis_x = 0
+    YAxis_y = cos_r_y
+    YAxis_z = -sin_r_y
     
     data[axises_adress + 3] = YAxis_x
     data[axises_adress + 4] = YAxis_y
     data[axises_adress + 5] = YAxis_z
     
-    horizontal_len = cos(R_y)
-    ZAxis_x = sin(R_x) * horizontal_len
-    ZAxis_y = sin(R_y)
-    ZAxis_z = cos(R_x) * horizontal_len
+    
+    ZAxis_x = sin_r_x
+    ZAxis_y = sin_r_y * cos_r_x
+    ZAxis_z = cos_r_y * cos_r_x
     
     data[axises_adress + 6] = ZAxis_x
     data[axises_adress + 7] = ZAxis_y
     data[axises_adress + 8] = ZAxis_z
     
-    forward_axis_x = -XAxis_z * 0.005
-    forward_axis_z = XAxis_x * 0.05
+    forward_axis_x = -sin_r_x * 0.05
+    forward_axis_z = cos_r_x * 0.05
+    
+    side_axis_x = cos_r_x * 0.05
+    side_axis_z = sin_r_x * 0.05
+
+jump mouse_check_end always

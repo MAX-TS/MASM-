@@ -93,7 +93,7 @@ def convert_expression(exp, var_name, file, is_jump, jump_loc):
     result = ""
     operations = []
     #pemdas
-    coeffs = {"=": -1000, "!": -1000, "not": -1, "and": -2, "or": -3, "<":0,">":0,"<=":0,">=":0,"==": 0,"===": 0,"!=": 0, "+": 1, "-": 1, "//": 2, "*": 3, "/": 3, "<<":4,">>":4,"|": 4, "&": 5, "^": 5, "**": 6, "func": 8, ".": 9}
+    coeffs = {"=": -1000, "!": -1000, "not": -1, "and": -2, "or": -3, "<":0,">":0,"<=":0,">=":0,"==": 0,"===": 0,"!=": 0, "+": 1, "-": 1, "//": 2, "*": 3, "/": 3, "<<":4,">>":4,"|": 4, "%": 5, "&": 5, "^": 5, "**": 6, "func": 8, ".": 9}
     functions = {"min", "max", "sin", "asin", "cos", "acos", "tan", "atan", "rand", "sqrt", "floor", "ceil", "log10", "log", "abs", "noise", "len", "angle", "anglediff", "flip"}
     functions_2_params = {"min", "max", "noise"}
     functions_2_params_stack = []
@@ -120,7 +120,7 @@ def convert_expression(exp, var_name, file, is_jump, jump_loc):
                     operations.append((number, len(numbers), coeffs[number]+additional_priority))
                 else:
                     operations.append((number, len(numbers)-1, coeffs[number]+additional_priority))
-            elif number[:4] == "cell" or number[:4] == "bank":
+            elif s == "[":
                 operations.append((number, len(numbers), coeffs["func"]+additional_priority))
                 cell_read_names.add(number)
             else:
@@ -157,7 +157,7 @@ def convert_expression(exp, var_name, file, is_jump, jump_loc):
             if s not in ")] ":
                 prev_number = False
                 
-    operations_to_names = {"+": "add", "-": "sub", "*": "mul", "/": "div", "//": "idiv", "abs": "mod", "**": "pow", "==": "equal", "!=": "notEqual", "and": "land", "<":"lessThan", "<=": "lessThanEq","===": "strictEqual", ">": "greaterThan", ">=": "greaterThanEq", "<<": "shl", ">>": "shr", "|": "or", "or": "or", "&": "and", "^": "xor", "not": "not", }
+    operations_to_names = {"+": "add", "-": "sub", "*": "mul", "/": "div", "//": "idiv", "abs": "mod", "**": "pow", "==": "equal", "!=": "notEqual", "and": "land", "<":"lessThan", "<=": "lessThanEq","===": "strictEqual", ">": "greaterThan", ">=": "greaterThanEq", "<<": "shl", ">>": "shr", "|": "or", "or": "or", "&": "and", "^": "xor", "not": "not", "%": "mod"}
     jump_operations = {"!=", "==", "===", "<", "<=", ">", ">="}
     operations.sort(key=sort_key, reverse=True)
     temp_var_count = 0
@@ -296,7 +296,7 @@ while line != "":
         if location not in line_labels.keys():
             line_labels_unknown[location] = line_labels_unknown.get(location, []) + [bytes_n - last_line_len + len("jump ") + line_n]
         #output.write("jump " + str(line_labels[location]) + " equal jump_var 1")
-    elif wrd[:4] == "cell" or wrd[:4] == "bank":
+    elif line[cursor] == "[":
         cursor = skip_spaces(cursor, line)
         pos1 = cursor + 1
         while line[cursor] !=  "]":

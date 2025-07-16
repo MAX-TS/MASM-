@@ -1,4 +1,4 @@
-define data bank3
+define data bank10
 
 define player_pos_adress 0
 define axises_adress 5
@@ -8,6 +8,16 @@ define points_len_adress 14
 define faces_len_adress 15
 define points_proj_adress 16
 
+define chunk_offset_adresses 17
+
+define graphic_processors_ready_flags 100
+define frame_ready_flag 99
+
+define projectors_n 8
+
+projector_id = 0
+
+ready_flag_adress = graphic_processors_ready_flags + projector_id
 
 R_x = data[3]
 R_y = data[4]
@@ -35,44 +45,105 @@ ZAxis_x = data[11]
 ZAxis_y = data[12]
 ZAxis_z = data[13]
 
+chunk_id = 0
 
-point_adress = 0
-write_adress = 0
+mesh_data_id = 0
+getlink mesh_data mesh_data_id
+:data_loop
 
-point_x = bank1[point_adress]
-point_y = bank1[point_adress + 1]
-point_z = bank1[point_adress + 2]
+    vert_id = 0
+    :vertical_loop
+        face_adress = 170 * vert_id + projector_id
+        
+        chunk_offset_adress = chunk_offset_adresses + chunk_id * 3
+        chunk_offset_x = data[chunk_offset_adress]
+        chunk_offset_y = data[chunk_offset_adress + 1]
+        chunk_offset_z = data[chunk_offset_adress + 2]
+        #for_all_faces
+        :face_loop
+            face_data = mesh_data[face_adress]
+        
+            type = face_data >> 36
+            
+            jump face_loop_exit type == 0
+            
+            
+            point_adress = 0
+            
+            #for_all_points
+            :point_loop
+                point_x = face_data % 8
+                face_data = face_data >> 3
+                
+                point_y = face_data % 8
+                face_data = face_data >> 3
+                
+                point_z = face_data % 8
+                face_data = face_data >> 3
+            
+                point_x = point_x - pos_x + chunk_offset_x
+                point_y = point_y - pos_y + chunk_offset_y
+                point_z = point_z - pos_z + chunk_offset_z
+                
+                point_local_x = XAxis_x * point_x + YAxis_x * point_y + ZAxis_x * point_z
+                point_local_y = XAxis_y * point_x + YAxis_y * point_y + ZAxis_y * point_z
+                point_local_z = XAxis_z * point_x + YAxis_z * point_y + ZAxis_z * point_z
+                
+                point_proj_x = point_local_x / point_local_z * focal_dist * screen_half_width
+                point_proj_y = point_local_y / point_local_z * focal_dist * screen_half_height
+                
+                jump not_negative_z point_local_z > 0
+                    point_proj_x = -point_proj_x * 1000
+                    point_proj_y = -point_proj_y * 1000
+                :not_negative_z
+                
+                point_proj_x = point_proj_x + screen_half_width
+                point_proj_y = point_proj_y + screen_half_height
+                
+                jump is_23 point_adress >= 2
+                    jump is_1 point_adress >= 1
+                        point0_x = point_proj_x
+                        point0_y = point_proj_y
+                        jump switch_point_exit always
+                    :is_1
+                        point1_x = point_proj_x
+                        point1_y = point_proj_y
+                        jump switch_point_exit always
+                :is_23
+                    jump is_3 point_adress >= 3
+                        point2_x = point_proj_x
+                        point2_y = point_proj_y
+                        jump switch_point_exit always
+                    :is_3
+                        point3_x = point_proj_x
+                        point3_y = point_proj_y
+                :switch_point_exit
+                
+                point_adress = point_adress + 1
+            jump point_loop point_adress < 4
+            
+            draw triangle point0_x point0_y point1_x point1_y point2_x point2_y
+            draw triangle point0_x point0_y point3_x point3_y point2_x point2_y
+            
+            face_adress = face_adress + projectors_n
+            
+        jump face_loop always
+        :face_loop_exit
+        
+        chunk_id = chunk_id + 1
+        vert_id = vert_id + 1
+    jump vertical_loop vert_id < 3
+    
+    mesh_data_id = mesh_data_id + 1
+    getlink mesh_data mesh_data_id
+jump data_loop mesh_data_id < 9
 
-#for_all_points
-:point_loop
-    point_x = point_x - pos_x
-    point_y = point_y - pos_y
-    point_z = point_z - pos_z
-    
-    point_local_x = XAxis_x * point_x + YAxis_x * point_y + ZAxis_x * point_z
-    point_local_y = XAxis_y * point_x + YAxis_y * point_y + ZAxis_y * point_z
-    point_local_z = XAxis_z * point_x + YAxis_z * point_y + ZAxis_z * point_z
-    
-    point_proj_x = point_local_x / point_local_z * focal_dist * screen_half_width
-    point_proj_y = point_local_y / point_local_z * focal_dist * screen_half_height
-    
-    jump not_negative_z point_local_z > 0
-        point_proj_x = -point_proj_x * 1000
-        point_proj_y = -point_proj_y * 1000
-    :not_negative_z
-    
-    point_proj_x = point_proj_x + screen_half_width
-    point_proj_y = point_proj_y + screen_half_height
-    
-    bank2[write_adress] = point_proj_x
-    bank2[write_adress + 1] = point_proj_y
-    
-    point_adress = point_adress + 3
-    write_adress = write_adress + 3
-    
-    point_x = bank1[point_adress]
-    point_y = bank1[point_adress + 1]
-    point_z = bank1[point_adress + 2]
-jump point_loop point_x != 123
+data[ready_flag_adress] = 1
 
-bank2[write_adress] = 123
+:read_flag
+is_done = data[frame_ready_flag]
+jump read_flag is_done != 1
+
+drawflush display1
+
+data[ready_flag_adress] = 0
